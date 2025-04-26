@@ -1,0 +1,191 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+import pandas as pd
+import random
+import time
+
+#use your own headers，accept language can only be English
+headers = {
+    'User-Agent': '', #add the your user-agent
+    'Accept-Language': 'en-US;q=0.8,en;q=0.7'
+}
+
+#Get uid
+n = 160
+#n represents how many times you need to request, for one request you will get 20-30 uid on average
+path = 'D:/123.csv'
+#set your own path
+
+def getuserlist(n):
+    friendslist = [76561198139971563]#The first ID，replace with your own random uid
+    linklist = ['https://steamcommunity.com/profiles/76561198139971563/recommended/']#replace with your own random corresponding url
+    #use your own key on Steam
+    key = 'C3EC501B4481EAE2B4302B29AEA49DFF'
+    for i in range(n):
+        steamid = random.choice(friendslist)
+        url = 'https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='+key+'&steamid='+str(steamid)+'&relationship=friend'
+        r = requests.get(url, headers=headers,timeout=10)
+        if len((r.json())) != 0:
+            for i in r.json()['friendslist']['friends']:
+                friendslist.append(str(i['steamid']))
+#                 link = 'https://steamcommunity.com/profiles/'+str(int(i['steamid']))+'/recommended/'
+#                 linklist.append(link)
+        friednslist = list(set(friendslist))
+        print('idnumbers:'+str(len(friendslist)))
+        t = random.randint(1, 2) # simulating real users
+        time.sleep(t)
+    return friendslist
+
+def getdf(n):#convert to dataframe
+    IDlist = getuserlist(n)
+    df = pd.DataFrame(IDlist,
+               columns =['ID'])
+    df['link'] = df['ID'].apply(lambda x:'https://steamcommunity.com/profiles/'+str(x)+'/recommended/')
+    return df
+if __name__ == "__main__":
+    df = getdf(n)
+    df.to_csv(path)#save the file
+
+
+
+##
+def remove(text):
+    remove_chars = '[0-9’!"#$%&\'()*+,-./:;<=>?@，。?★、…【】《》？“”‘’！[\\]^_`{|}~]+'
+    return re.sub(remove_chars, '', text)
+
+def getrecommend(soup):
+    a = soup.find_all(class_="title")
+    recommend = []
+    for i in a:
+        recommend.append(i.string)
+    return recommend
+def getvalue(soup):
+    a = soup.find_all(class_="header")
+    value = []
+    for i in a:
+        b = re.search(r'([0-9]*) people found this review helpful.*',i.text)
+        c = re.search(r'No one has rated this review as helpful yet',i.text)
+        d = re.search(r'.*(.*?) person found this review helpful.*',i.text)
+        if b is not None:
+            value.append(int(b.group(1)))
+        elif c is not None:
+            value.append(0)
+        elif d is not None:
+            value.append(1)
+        else:
+            print(i.text)
+            value.append('error')
+    return value
+def getfun(soup):
+    a = soup.find_all(class_="header")
+    fun = []
+    for i in a:
+        b = re.search(r'([0-9]*) people found this review funny.*',i.text)
+        d = re.search(r'.*(.*?) person found this review funny.*',i.text)
+        if b is not None:
+            fun.append(int(b.group(1)))
+        elif d is not None:
+            fun.append(1)
+        elif b is None and d is None:
+            fun.append(0)
+        else:
+            print(i.text)
+            fun.append('error')
+    return fun
+def getreviews(soup):
+    reviews = []
+    a = soup.find_all(class_="content")
+    for i in range(1,len(a)):
+#         b = re.search(r'(.*?)\t.*',a[i].text)
+#         reviews.append(b.group(1))
+        reviews.append(a[i].text)
+    return reviews
+def getgame(soup):
+    games = []
+    a = soup.find_all(class_="game_capsule_ctn")
+    for i in a:
+        games.append(i['href'])
+    return games
+def getdate(soup):
+    date = []
+    a = soup.find_all(class_="posted")
+    for i in a:
+        b = re.search(r'.*Posted (.*?)\..*',i.text)
+        c = re.search(r'.*Last edited (.*?)\..*',i.text)
+        if c is not None:
+            date.append(c.group(1))
+        else:
+            date.append(b.group(1))
+    return date
+def getplaytime(soup):
+    total = []
+    whenreview = []
+    a = soup.find_all(class_="hours")
+    for i in a:
+        b = re.search(r'([0-9]*\.[0-9]) hrs on record.*',i.text)
+        c = re.search(r'\(([0-9]*\.[0-9]) hrs at review time.*',i.text)
+        total.append(b.group(1))
+        if c is not None:
+            whenreview.append(c.group(1))
+        else:
+            whenreview.append(b.group(1))
+    return total,whenreview
+  
+from sklearn.utils import shuffle
+df1 = pd.read_csv('D:/123.csv')
+df1 = shuffle(df1)#randomly choosing uid from the file
+
+#getting single user's all reviews
+IDs = []
+links = []
+recommends = []
+values = []
+funs = []
+reviewss = []
+games = []
+dates = []
+total_times = []
+review_times = []
+count = 0
+for index,row in df1.iterrows():
+    r1 = requests.get(row['link'],headers = headers)
+    count = count + 1
+    t = random.randint(1, 2) # simulating real user
+    time.sleep(t)
+    soup = BeautifulSoup(r1.text, 'lxml')
+    
+    recommend = getrecommend(soup)
+    value = getvalue(soup)
+    fun = getfun(soup)
+    reviews = getreviews(soup)
+    game = getgame(soup)
+    date = getdate(soup)
+    total_time,review_time = getplaytime(soup)
+    
+    for i in range(len(reviews)):
+        IDs.append(row['ID'])
+        links.append(row['link'])
+
+    recommends = recommends + recommend
+    values = values + value
+    funs = funs + fun
+    reviewss = reviewss + reviews
+    games = games + game
+    dates = dates + date
+    total_times = total_times + total_time
+    review_times = review_times + review_time
+    print(count)
+
+
+#save the file
+from pandas.core.frame import DataFrame
+data_dict = {'ID':IDs,'link':links,'recommend':recommends,'value':values,'fun':funs,'reviews':reviewss,'game':games,
+             'date':dates,'total_time':total_times,'review_time':review_times}
+data = pd.DataFrame.from_dict(data_dict, orient='index')
+
+data.to_csv('D:/20.csv', index=False, encoding='utf_8_sig')
+
+
+
+  
