@@ -18,10 +18,10 @@ path = 'D:/123.csv'
 #set your own path
 
 def getuserlist(n):
-    friendslist = [76561198139971563]#The first ID，replace with your own random uid
-    linklist = ['https://steamcommunity.com/profiles/76561198139971563/recommended/']#replace with your own random corresponding url
+    friendslist = [XXXXXXXX]  #The first ID，replace with your own random uid
+    linklist = ['https://steamcommunity.com/profiles/XXXXXXXXXX/recommended/']#replace with your own random corresponding url
     #use your own key on Steam
-    key = 'C3EC501B4481EAE2B4302B29AEA49DFF'
+    key = 'XXXXXXXX'
     for i in range(n):
         steamid = random.choice(friendslist)
         url = 'https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='+key+'&steamid='+str(steamid)+'&relationship=friend'
@@ -50,9 +50,9 @@ if __name__ == "__main__":
 
 
 ##
-def remove(text):
+def remove(text): #Use Regular Expression to remove symbols
     remove_chars = '[0-9’!"#$%&\'()*+,-./:;<=>?@，。?★、…【】《》？“”‘’！[\\]^_`{|}~]+'
-    return re.sub(remove_chars, '', text)
+    return re.sub(remove_chars, '', text)               
 
 def getrecommend(soup):
     a = soup.find_all(class_="title")
@@ -77,7 +77,7 @@ def getvalue(soup):
             print(i.text)
             value.append('error')
     return value
-def getfun(soup):
+def getfun(soup): #Count the number of people who found this review funny
     a = soup.find_all(class_="header")
     fun = []
     for i in a:
@@ -92,22 +92,22 @@ def getfun(soup):
         else:
             print(i.text)
             fun.append('error')
-    return fun
-def getreviews(soup):
+    return fun             
+def getreviews(soup):  #Get the content of reviews
     reviews = []
     a = soup.find_all(class_="content")
     for i in range(1,len(a)):
 #         b = re.search(r'(.*?)\t.*',a[i].text)
 #         reviews.append(b.group(1))
         reviews.append(a[i].text)
-    return reviews
-def getgame(soup):
+    return reviews   
+def getgame(soup): #Capture the game title
     games = []
     a = soup.find_all(class_="game_capsule_ctn")
     for i in a:
         games.append(i['href'])
-    return games
-def getdate(soup):
+    return games      
+def getdate(soup):   #Get the date that the review was posted
     date = []
     a = soup.find_all(class_="posted")
     for i in a:
@@ -117,8 +117,8 @@ def getdate(soup):
             date.append(c.group(1))
         else:
             date.append(b.group(1))
-    return date
-def getplaytime(soup):
+    return date  
+def getplaytime(soup):  #Get the time that the reviewer have played on this game till now and the time when he wrote the review 
     total = []
     whenreview = []
     a = soup.find_all(class_="hours")
@@ -130,7 +130,7 @@ def getplaytime(soup):
             whenreview.append(c.group(1))
         else:
             whenreview.append(b.group(1))
-    return total,whenreview
+    return total,whenreview  
   
 from sklearn.utils import shuffle
 df1 = pd.read_csv('D:/123.csv')
